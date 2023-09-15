@@ -5,6 +5,21 @@ from google.auth.transport.requests import Request
 from googleapiclient.discovery import build
 import asyncio, json
 from concurrent.futures import ThreadPoolExecutor
+import sqlite3 
+
+# connect to sqlite database
+conn = sqlite3.connect('email_db.sqlite')
+cursor = conn.cursor()
+
+# database table structue
+cursor.execute('''
+    CREATE TABLE IF NOT EXISTS email_details (
+        id INTEGER PRIMARY KEY AUTOINCREMENT, subject TEXT, sender TEXT, receiver TEXT, date TIMESTAMP,
+        message TEXT
+    )'''
+    )
+
+conn.commit()
 
 # Gmail Scopes
 SCOPES = ['https://www.googleapis.com/auth/gmail.readonly']
@@ -22,13 +37,13 @@ async def fetch_emails(msg_id, creds):
             headers = msg['payload']['headers']
             subject = [header['value'] for header in headers if header['name'] == 'Subject'][0]
             sender = [header['value'] for header in headers if header['name'] == 'From'][0]
-            to = [header['value'] for header in headers if header['name'] == 'To'][0]
+            receiver = [header['value'] for header in headers if header['name'] == 'To'][0]
             date = [header['value'] for header in headers if header['name'] == 'Date'][0]
             message_body = msg['snippet']
 
             respone_json = {
-                "from": sender,
-                "to": to,
+                "sender": sender,
+                "receiver": receiver,
                 "date": date,
                 "subject": subject,
                 "message": message_body
@@ -40,11 +55,18 @@ async def fetch_emails(msg_id, creds):
                 executor, get_email_details)
 
         print("Date: ", response['date'])
-        print("From: ", response['from'])
-        print("To: ", response['to'])
+        print("Sender: ", response['sender'])
+        print("Receiver: ", response['receiver'])
         print("Message: ", response['message'])
         print("Subject: ", response['subject'])
-        print('-' * 20)
+        print('-' * 20, "saving to database")
+        
+        cursor.execute(''' INSERT INTO email_details (subject, sender, receiver, date, message) VALUES (?, ?, ?, ?, ?)''', 
+                       (response['subject'], response['sender'], response['receiver'], response['date'], response['message']))
+        conn.commit()
+
+        print("*", "saved to database")
+
     except Exception as e:
         print(f"Error fetching email details: {str(e)}")
 
