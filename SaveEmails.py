@@ -3,9 +3,9 @@ from google.oauth2 import credentials
 from google_auth_oauthlib.flow import InstalledAppFlow
 from google.auth.transport.requests import Request
 from googleapiclient.discovery import build
-import asyncio, json
+import asyncio, json, string, re
 from concurrent.futures import ThreadPoolExecutor
-import sqlite3 
+import sqlite3
 
 # connect to sqlite database
 conn = sqlite3.connect('email_db.sqlite')
@@ -15,7 +15,7 @@ cursor = conn.cursor()
 cursor.execute('''
     CREATE TABLE IF NOT EXISTS email_details (
         id INTEGER PRIMARY KEY AUTOINCREMENT, subject TEXT, sender TEXT, receiver TEXT, date TIMESTAMP,
-        message TEXT
+        message TEXT, read INTEGER, folder TEXT
     )'''
     )
 
@@ -26,6 +26,31 @@ SCOPES = ['https://www.googleapis.com/auth/gmail.readonly']
 
 # Creds Json
 CLIENT_SECRET_FILE = 'credentials.json'
+
+# sanitize email for security purpose
+async def sanitize_emails(content):
+    # removing the ascii and non printables
+    sanitized_content = ''.join(filter(lambda x: x in string.printable, content))
+    sanitized_content = re.sub(r'[;<>&]', '', sanitized_content)
+    return sanitized_content
+
+# save email in to db
+async def insert_email(subject, sender, receiver, date, message):
+    try:
+        print("coming in insert email")
+        query = '''
+            INSERT INTO email_details (subject, sender, receiver, date, message, read, folder) VALUES (?, ?, ?, ?, ?, ?, ?)
+        '''
+        # 
+        read = 0
+        folder = ""  
+        cursor.execute(query, (subject, sender, receiver, date, message, read, folder))
+        conn.commit()
+
+        print("*", "saved to database")
+    
+    except Exception as e:
+        print("error inserting emails", str(e))
 
 # logic for fetching email's
 async def fetch_emails(msg_id, creds):
@@ -40,7 +65,6 @@ async def fetch_emails(msg_id, creds):
             receiver = [header['value'] for header in headers if header['name'] == 'To'][0]
             date = [header['value'] for header in headers if header['name'] == 'Date'][0]
             message_body = msg['snippet']
-
             respone_json = {
                 "sender": sender,
                 "receiver": receiver,
@@ -61,11 +85,13 @@ async def fetch_emails(msg_id, creds):
         print("Subject: ", response['subject'])
         print('-' * 20, "saving to database")
         
-        cursor.execute(''' INSERT INTO email_details (subject, sender, receiver, date, message) VALUES (?, ?, ?, ?, ?)''', 
-                       (response['subject'], response['sender'], response['receiver'], response['date'], response['message']))
-        conn.commit()
+        # cursor.execute(''' INSERT INTO email_details (subject, sender, receiver, date, message) VALUES (?, ?, ?, ?, ?)''', 
+        #                (response['subject'], response['sender'], response['receiver'], response['date'], response['message']))
+        # conn.commit()
 
-        print("*", "saved to database")
+        # print("*", "saved to database")
+        sanitized_email = await sanitize_emails(response['message'])
+        email_resp = await insert_email(response['subject'], response['sender'], response['receiver'], response['date'], sanitized_email)
 
     except Exception as e:
         print(f"Error fetching email details: {str(e)}")

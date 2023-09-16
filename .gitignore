@@ -162,3 +162,7 @@ cython_debug/
 
 # assignmnt db
 email_db.sqlite
+
+# token
+token.json
+.token.json
