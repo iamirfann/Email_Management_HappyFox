@@ -45,12 +45,13 @@ To fetch and process emails, follow these steps:
 
 1. When you run the scripts, you will redirect to google authentication page in your default browser.
 
-![Local Image](/readme_image/image1.png)
+2. Select your gmail account and click on advanced and again click on go to irfan's app.
 
-    
-    2. Select your gmail account and allow all permissions.
+3. Then click on select all to select all permissions enable to run this scripts and click on continue.
 
-    3. Then return to your terminal screen.
+4. Then you will see a text "your authentication has been completed"
+
+5. Now go to your terminal where you have run the scripts. It would have started collecting emails.
 
 
 
