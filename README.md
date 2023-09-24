@@ -26,6 +26,11 @@ Python scripts for connecting to Gmail using OAuth authentication, fetching emai
 
 ## Usage
 
+I have given a detailed demo video. Kindly watch it.
+
+https://3k7dlyo0ck.vmaker.com/record/RR83tZ08Cz3AUYMi
+
+
 Provide detailed instructions on how to use your email management scripts. Include examples and command-line usage if applicable.
 
 To fetch and process emails, follow these steps:
