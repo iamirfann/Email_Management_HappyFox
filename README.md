@@ -45,7 +45,7 @@ To fetch and process emails, follow these steps:
 
 1. When you run the scripts, you will redirect to google authentication page in your default browser.
 
-![Local Image](readme_image/image1.png)
+![Local Image](/readme_image/image1.png)
 
     
     2. Select your gmail account and allow all permissions.
