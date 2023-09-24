@@ -27,9 +27,6 @@ Python scripts for connecting to Gmail using OAuth authentication, fetching emai
 
 Provide detailed instructions on how to use your email management scripts. Include examples and command-line usage if applicable.
 
-```markdown
-## Usage
-
 To fetch and process emails, follow these steps:
 
 1. Run the first script to connect to Gmail and fetch emails:
