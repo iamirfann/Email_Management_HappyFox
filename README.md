@@ -7,6 +7,7 @@ Python scripts for connecting to Gmail using OAuth authentication, fetching emai
 
 - [Installation](#installation)
 - [Usage](#usage)
+- [Authentication](#authentication)
 - [Features](#features)
 - [Rules](#rules)
 
@@ -38,6 +39,19 @@ To fetch and process emails, follow these steps:
 
     ```bash
     python ProcessEmails.py
+
+
+## Authentication
+
+    1. When you run the scripts, you will redirect to google authentication page in your default browser.
+
+        ![Local Image](readme_image/image1.png)
+
+    
+    2. Select your gmail account and allow all permissions.
+
+    3. Then return to your terminal screen.
+
 
 
 ## Features
