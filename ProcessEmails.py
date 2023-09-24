@@ -33,7 +33,8 @@ async def fetch_emails(service):
             print('No emails found in the database.')
         else:
             print(f'Total emails in the database: {len(emails)}')
-            print('Fetching emails...')
+            print("*" * 20, "Fetching Emails From Database", "*" * 20) 
+            print("*" * 20, "Processing Emails", "*" * 20) 
             tasks = [process_emails(service, email) for email in emails]
             await asyncio.gather(*tasks)
     
@@ -57,7 +58,6 @@ async def process_emails(service, email):
         for rule_name, rule_data in rule.items():
             if rule_data.get('active') == 1 and rule_data.get('collective_predicate') == "Any":
                 if any(check_rule(email, condition) for condition in rule_data.get("conditions")):
-                    print("Any", email)
                     if rule_data["actions"]["mark_as_read"]:
                         mark_as_read(service, emailId)
                     else:
@@ -65,21 +65,23 @@ async def process_emails(service, email):
                     if "move_to_folder" in rule_data["actions"]:
                         move_to_folder(service, emailId, rule_data["actions"]['move_to_folder'])
 
+                    print("*" * 20, "Rule Condition Checked and Action Performed for Email : ", emailId , "*" * 20) 
+
             if rule_data.get('active') == 1 and rule_data.get('collective_predicate') == "All":
                 if all(check_rule(email, condition) for condition in rule_data.get("conditions")):
-                    print("all", email)
                     if rule_data["actions"]["mark_as_read"]:
                         mark_as_read(service, emailId)
                     else:
                         mark_as_unread(service, emailId)
                     if "move_to_folder" in rule_data["actions"]:
                         move_to_folder(service, emailId, rule_data["actions"]['move_to_folder'])
+                    
+                    print("*" * 20, "Rule Condition Checked and Action Performed for Email : ", emailId , "*" * 20) 
 
 
 def get_label_id(service, folder_name):
     try:
         labels = service.users().labels().list(userId='me').execute()
-        print("labels", labels)
         for label in labels['labels']:
             if label['name'] == folder_name:
                 return label['id']
@@ -115,7 +117,6 @@ def move_to_folder(service, email_id, folder_name):
 
 
 def check_rule(email, condition):
-    print(" check rule condition", condition)
     field = condition["field"]
     predicate = condition["predicate"]
     value = condition["value"]
@@ -172,3 +173,4 @@ if __name__ == '__main__':
     asyncio.run(main())
     # asyncio.run(fetch_emails())
 conn.close()
+print("*" * 20, "Completed Processing Emails", "*" * 20) 

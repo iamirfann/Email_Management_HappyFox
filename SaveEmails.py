@@ -24,7 +24,7 @@ cursor.execute('''
 conn.commit()
 
 # Gmail Scopes
-SCOPES = ['https://www.googleapis.com/auth/gmail.readonly']
+SCOPES = ['https://www.googleapis.com/auth/gmail.readonly', 'https://www.googleapis.com/auth/gmail.modify', 'https://www.googleapis.com/auth/gmail.labels']
 
 # Creds Json
 CLIENT_SECRET_FILE = 'credentials.json'
@@ -39,7 +39,6 @@ async def sanitize_emails(content):
 # save email in to db
 async def insert_email(email_id, subject, sender, receiver, date, message):
     try:
-        print("coming in insert email")
         query = '''
             INSERT INTO email_details (emailid, subject, sender, receiver, date, message) VALUES (?, ?, ?, ?, ?, ?)
         '''
@@ -47,8 +46,6 @@ async def insert_email(email_id, subject, sender, receiver, date, message):
         cursor.execute(query, (email_id, subject, sender, receiver, date, message))
         conn.commit()
 
-        print("*", "saved to database")
-    
     except Exception as e:
         print("error inserting emails", str(e))
 
@@ -83,19 +80,6 @@ async def fetch_emails(msg_id, creds):
             response = await asyncio.get_event_loop().run_in_executor(
                 executor, get_email_details)
 
-        print("Email Id: ", response['email_id'])
-        print("Date: ", response['date'])
-        print("Sender: ", response['sender'])
-        print("Receiver: ", response['receiver'])
-        print("Message: ", response['message'])
-        print("Subject: ", response['subject'])
-        print('-' * 20, "saving to database")
-        
-        # cursor.execute(''' INSERT INTO email_details (subject, sender, receiver, date, message) VALUES (?, ?, ?, ?, ?)''', 
-        #                (response['subject'], response['sender'], response['receiver'], response['date'], response['message']))
-        # conn.commit()
-
-        # print("*", "saved to database")
         sanitized_email = await sanitize_emails(response['message'])
         email_resp = await insert_email(response['email_id'], response['subject'], response['sender'], response['receiver'], response['date'], sanitized_email)
 
@@ -124,7 +108,7 @@ async def main():
     messages = results.get('messages', [])
 
     if messages:
-        print("Emails in Inbox")
+        print("*" * 20, "Fetching & Saving Emails", "*" * 20) 
         tasks = [fetch_emails(message['id'], creds) for message in messages]
         await asyncio.gather(*tasks)
         # task
@@ -136,3 +120,4 @@ if __name__ == '__main__':
     asyncio.run(main())
 
 conn.close()
+print("*" * 20, "Completed Saving Emails", "*" * 20)
