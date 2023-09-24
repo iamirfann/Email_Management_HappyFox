@@ -1,0 +1,57 @@
+[
+    {
+
+        "rule1" : 
+            {
+            "collective_predicate": "All",
+            "conditions": [
+            {
+                "field": "message",
+                "predicate": "contains",
+                "value": "hi irfan"
+            },
+            {
+                "field": "sender",
+                "predicate": "contains",
+                "value": "thisis.irfan98@gmail.com"
+            },
+            {
+                "field": "date",
+                "predicate": "greater than",
+                "value": "2023-09-23"
+            }
+            ],
+            "actions": {
+            "mark_as_read": false,
+            "move_to_folder": "INBOX"
+            },
+            "active": 1
+            }
+    },
+    {
+
+        "rule2": {
+            "collective_predicate": "Any",
+            "conditions": [
+
+            {
+                "field": "sender",
+                "predicate": "contains",
+                "value": "donotreply@indeed.com"
+            },
+            {
+                "field": "date",
+                "predicate": "lesser than",
+                "value": "2023-09-01"
+            }
+            ],
+            "actions": {
+            "mark_as_read": true
+
+            },
+            "active": 0
+        }
+    }
+]
+
+  

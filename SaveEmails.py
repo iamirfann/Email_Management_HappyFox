@@ -6,6 +6,8 @@ from googleapiclient.discovery import build
 import asyncio, json, string, re
 from concurrent.futures import ThreadPoolExecutor
 import sqlite3
+import datetime
+import email.utils
 
 # connect to sqlite database
 conn = sqlite3.connect('email_db.sqlite')
@@ -14,8 +16,8 @@ cursor = conn.cursor()
 # database table structue
 cursor.execute('''
     CREATE TABLE IF NOT EXISTS email_details (
-        id INTEGER PRIMARY KEY AUTOINCREMENT, subject TEXT, sender TEXT, receiver TEXT, date TIMESTAMP,
-        message TEXT, read INTEGER, folder TEXT
+        id INTEGER PRIMARY KEY AUTOINCREMENT, emailid VARCHAR, subject TEXT, sender TEXT, receiver TEXT, date TIMESTAMP,
+        message TEXT
     )'''
     )
 
@@ -35,16 +37,14 @@ async def sanitize_emails(content):
     return sanitized_content
 
 # save email in to db
-async def insert_email(subject, sender, receiver, date, message):
+async def insert_email(email_id, subject, sender, receiver, date, message):
     try:
         print("coming in insert email")
         query = '''
-            INSERT INTO email_details (subject, sender, receiver, date, message, read, folder) VALUES (?, ?, ?, ?, ?, ?, ?)
+            INSERT INTO email_details (emailid, subject, sender, receiver, date, message) VALUES (?, ?, ?, ?, ?, ?)
         '''
-        # 
-        read = 0
-        folder = ""  
-        cursor.execute(query, (subject, sender, receiver, date, message, read, folder))
+    
+        cursor.execute(query, (email_id, subject, sender, receiver, date, message))
         conn.commit()
 
         print("*", "saved to database")
@@ -56,7 +56,7 @@ async def insert_email(subject, sender, receiver, date, message):
 async def fetch_emails(msg_id, creds):
     try:
         service = build('gmail', 'v1', credentials=creds)
-
+        
         def get_email_details():
             msg = service.users().messages().get(userId='me', id=msg_id, format='full').execute()
             headers = msg['payload']['headers']
@@ -64,11 +64,16 @@ async def fetch_emails(msg_id, creds):
             sender = [header['value'] for header in headers if header['name'] == 'From'][0]
             receiver = [header['value'] for header in headers if header['name'] == 'To'][0]
             date = [header['value'] for header in headers if header['name'] == 'Date'][0]
+            formatted_date = email.utils.parsedate_to_datetime(date)
+            email_date = formatted_date.strftime("%Y-%m-%d %H:%M:%S")
             message_body = msg['snippet']
+            email_id = msg['id']
+            
             respone_json = {
+                "email_id": email_id,
                 "sender": sender,
                 "receiver": receiver,
-                "date": date,
+                "date": email_date,
                 "subject": subject,
                 "message": message_body
             }
@@ -78,6 +83,7 @@ async def fetch_emails(msg_id, creds):
             response = await asyncio.get_event_loop().run_in_executor(
                 executor, get_email_details)
 
+        print("Email Id: ", response['email_id'])
         print("Date: ", response['date'])
         print("Sender: ", response['sender'])
         print("Receiver: ", response['receiver'])
@@ -91,7 +97,7 @@ async def fetch_emails(msg_id, creds):
 
         # print("*", "saved to database")
         sanitized_email = await sanitize_emails(response['message'])
-        email_resp = await insert_email(response['subject'], response['sender'], response['receiver'], response['date'], sanitized_email)
+        email_resp = await insert_email(response['email_id'], response['subject'], response['sender'], response['receiver'], response['date'], sanitized_email)
 
     except Exception as e:
         print(f"Error fetching email details: {str(e)}")
@@ -128,4 +134,5 @@ async def main():
 
 if __name__ == '__main__':
     asyncio.run(main())
-    # main()
+
+conn.close()
